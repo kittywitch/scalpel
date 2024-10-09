@@ -1,28 +1,31 @@
-{self}: 
-{config, pkgs, lib, ...}:
-
-with lib;
-
-let
+{self}: {
+  config,
+  pkgs,
+  lib,
+  ...
+}:
+with lib; let
   cfg = config.scalpel;
-  
-  trafos = builtins.map (trafo:
-      let
-        matchers = builtins.listToAttrs (builtins.map (matcher:
-          { name = "${matcher.pattern}"; value = "${matcher.secret}"; }
-        ) (builtins.attrValues trafo.matchers));
-      in
-      self.mk_scalpel {
-        inherit matchers;
-        inherit (trafo) source destination mode group;
-        user = trafo.owner;
-      }) (builtins.attrValues cfg.trafos);
+
+  trafos = builtins.map (trafo: let
+    matchers = builtins.listToAttrs (builtins.map (
+      matcher: {
+        name = "${matcher.pattern}";
+        value = "${matcher.secret}";
+      }
+    ) (builtins.attrValues trafo.matchers));
+  in
+    self.mk_scalpel {
+      inherit matchers;
+      inherit (trafo) source destination mode group;
+      user = trafo.owner;
+    }) (builtins.attrValues cfg.trafos);
 
   trafos_call = builtins.concatStringsSep "\n" (
     builtins.map (trafo: "${trafo}") trafos
   );
 
-  matcherType = types.submodule({config, ...}:{
+  matcherType = types.submodule ({config, ...}: {
     options = {
       pattern = mkOption {
         type = types.str;
@@ -39,7 +42,7 @@ let
       };
     };
   });
-  trafoType = types.submodule({config, ...}:{
+  trafoType = types.submodule ({config, ...}: {
     options = {
       name = mkOption {
         type = types.str;
@@ -84,15 +87,14 @@ let
       };
       matchers = mkOption {
         type = types.attrsOf matcherType;
-        default = { };
+        default = {};
         description = ''
           Matcher definitions
         '';
       };
     };
   });
-in
-{
+in {
   options.scalpel = {
     secretsDir = mkOption {
       type = types.path;
@@ -103,14 +105,14 @@ in
     };
     trafos = mkOption {
       type = types.attrsOf trafoType;
-      default = { };
+      default = {};
       description = ''
         File transformator definitions
       '';
     };
   };
 
-  config = mkIf (cfg.trafos != { }) {
+  config = mkIf (cfg.trafos != {}) {
     system.activationScripts.scalpelCreateStore = {
       text = ''
         echo "[scalpel] Ensuring existance of ${cfg.secretsDir}"
@@ -120,17 +122,19 @@ in
         echo "[scalpel] Clearing old secrets from ${cfg.secretsDir}"
         rm -rf ${cfg.secretsDir}/{*,.*}
       '';
-      deps = [ "specialfs" ];
+      deps = ["specialfs"];
     };
 
     system.activationScripts.scalpel = {
       text = trafos_call;
-      deps = [
-        "users"
-        "groups"
-        "specialfs"
-        "scalpelCreateStore"  
-      ] ++ optional (builtins.hasAttr "setupSecrets" config.system.activationScripts) "setupSecrets"
+      deps =
+        [
+          "users"
+          "groups"
+          "specialfs"
+          "scalpelCreateStore"
+        ]
+        ++ optional (builtins.hasAttr "setupSecrets" config.system.activationScripts) "setupSecrets"
         ++ optional (builtins.hasAttr "agenix" config.system.activationScripts) "agenix";
     };
   };

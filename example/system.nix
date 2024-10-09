@@ -1,5 +1,4 @@
-{pkgs, ...}:
-{
+{pkgs, ...}: {
   boot.isContainer = true;
 
   services.openssh = {
@@ -7,7 +6,7 @@
   };
 
   # PUBLICALLY KNOWN KEY, NEVER USE ON A MACHINE REACHABLE FROM THE NET
-  environment.etc."ssh/ssh_host_ed25519_key"= {
+  environment.etc."ssh/ssh_host_ed25519_key" = {
     text = ''
       -----BEGIN OPENSSH PRIVATE KEY-----
       b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
@@ -28,7 +27,7 @@
   };
 
   sops.defaultSopsFile = ./secrets/mosquitto.yaml;
-  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+  sops.age.sshKeyPaths = ["/etc/ssh/ssh_host_ed25519_key"];
   sops.gnupg.sshKeyPaths = [];
   sops.secrets.br1passwd = {};
   sops.secrets.br2passwd = {};
@@ -42,20 +41,19 @@
     ];
 
     bridges.br1 = {
-      addresses = [ { address = "127.0.0.2"; } ];
-      topics = [ "# in" ];
+      addresses = [{address = "127.0.0.2";}];
+      topics = ["# in"];
       settings = {
         remote_password = "!!BR1_PASSWORD!!";
       };
     };
 
     bridges.br2 = {
-      addresses = [ { address = "127.0.0.3"; } ];
-      topics = [ "# in" ];
+      addresses = [{address = "127.0.0.3";}];
+      topics = ["# in"];
       settings = {
         remote_password = "!!BR2_PASSWORD!!";
       };
     };
   };
-
 }
