@@ -15,7 +15,7 @@ with lib; let
       }
     ) (builtins.attrValues trafo.matchers));
   in
-    self.${pkgs.hostPlatform.system}.mk_scalpel {
+    self.mk_scalpel.${pkgs.hostPlatform.system} {
       inherit matchers;
       inherit (trafo) source destination mode group;
       user = trafo.owner;
